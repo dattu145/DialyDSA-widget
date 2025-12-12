@@ -26,35 +26,57 @@ export default function HomeScreen() {
         });
     }, [navigation]);
 
+    const [repoName, setRepoName] = useState('');
+
     const loadDailyProblem = async () => {
         setLoading(true);
         try {
+            // Load Repo Name
+            const config = await StorageService.getConfig();
+            if (config) setRepoName(config.repo);
+
             // Check if widget updated the problem file
             const widgetFile = await FileSystem.getInfoAsync(FileSystem.documentDirectory + 'daily_problem.json');
+            let currentProblem: Problem | null = null;
+
             if (widgetFile.exists) {
                 const content = await FileSystem.readAsStringAsync(FileSystem.documentDirectory + 'daily_problem.json');
-                const problem = JSON.parse(content);
-                setProblem(problem);
+                currentProblem = JSON.parse(content);
+            } else {
+                currentProblem = await StorageService.getDailyProblem();
+            }
+
+            // Enforce Filter
+            const selectedFolder = await StorageService.getSelectedFolder();
+            if (currentProblem && selectedFolder !== 'All' && !currentProblem.path.startsWith(selectedFolder + '/')) {
+                // Current problem doesn't match filter, fetch new one
+                await fetchNewProblem();
+                return;
+            }
+
+            if (currentProblem) {
+                // Check if repoName is missing and update if needed
+                if (!(currentProblem as any).repoName) {
+                    const config = await StorageService.getConfig();
+                    if (config) {
+                        currentProblem = { ...currentProblem, repoName: config.repo } as any;
+                        await StorageService.setDailyProblem(currentProblem!);
+                    }
+                }
+
+                setProblem(currentProblem);
                 // Also fetch snippet for the widget problem
-                const problemContent = await GithubService.fetchProblemContent(problem.path);
+                const problemContent = await GithubService.fetchProblemContent(currentProblem!.path);
                 const lines = problemContent.split('\n').slice(0, 15).join('\n');
                 setCodeSnippet(lines);
             } else {
-                const stored = await StorageService.getDailyProblem();
-                if (stored) {
-                    setProblem(stored);
-                    GithubService.fetchProblemContent(stored.path).then(c => {
-                        setCodeSnippet(c.split('\n').slice(0, 15).join('\n'));
-                    });
-                } else {
-                    // If no stored problem and no widget problem, fetch a new one
-                    fetchNewProblem();
-                }
+                // If no stored problem and no widget problem, fetch a new one
+                await fetchNewProblem();
             }
         } catch (error) {
             console.error('Failed to load daily problem', error);
             // Fallback to fetching a new problem if loading fails
-            fetchNewProblem();
+            await fetchNewProblem();
         } finally {
             setLoading(false);
         }
@@ -63,19 +85,36 @@ export default function HomeScreen() {
     const fetchNewProblem = async () => {
         setLoading(true);
         try {
+            // Load Repo Name if not set
+            if (!repoName) {
+                const config = await StorageService.getConfig();
+                if (config) setRepoName(config.repo);
+            }
+
             let tree = await StorageService.getCachedFileTree();
             if (tree.length === 0) {
                 tree = await GithubService.fetchFileTree();
                 await StorageService.cacheFileTree(tree);
             }
 
-            if (tree.length > 0) {
-                const randomProblem = tree[Math.floor(Math.random() * tree.length)];
+            // Use filtered tree for selection
+            const filteredTree = await StorageService.getFilteredFileTree();
+
+            if (filteredTree.length > 0) {
+                const randomProblem = filteredTree[Math.floor(Math.random() * filteredTree.length)];
                 setProblem(randomProblem);
                 await StorageService.setDailyProblem(randomProblem);
                 await StorageService.saveHistory(randomProblem);
 
                 // Fetch content for snippet
+                const content = await GithubService.fetchProblemContent(randomProblem.path);
+                const lines = content.split('\n').slice(0, 15).join('\n');
+                setCodeSnippet(lines);
+            } else if (tree.length > 0) {
+                // Fallback to any problem if filter returns empty
+                const randomProblem = tree[Math.floor(Math.random() * tree.length)];
+                setProblem(randomProblem);
+                await StorageService.setDailyProblem(randomProblem);
                 const content = await GithubService.fetchProblemContent(randomProblem.path);
                 const lines = content.split('\n').slice(0, 15).join('\n');
                 setCodeSnippet(lines);
@@ -105,6 +144,7 @@ export default function HomeScreen() {
     return (
         <View style={styles.container}>
             <Text style={styles.header}>ViewWidget</Text>
+            {repoName ? <Text style={styles.subHeader}>{repoName}</Text> : null}
 
             {loading && <ActivityIndicator size="large" color="#0000ff" />}
 
@@ -152,6 +192,13 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         textAlign: 'center',
         color: '#333',
+    },
+    subHeader: {
+        fontSize: 16,
+        textAlign: 'center',
+        color: '#666',
+        marginBottom: 20,
+        marginTop: -15,
     },
     content: {
         flex: 1,

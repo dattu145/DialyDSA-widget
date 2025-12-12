@@ -49,10 +49,14 @@ export const StorageService = {
                 fullContent = '// Failed to load code';
             }
 
+            const config = await this.getConfig();
+            const repoName = config ? config.repo : 'Unknown Repo';
+
             const problemWithMeta = {
                 ...problem,
                 seen: isSeen,
-                code: fullContent // Add code to the object stored for widget
+                code: fullContent, // Add code to the object stored for widget
+                repoName: repoName
             };
 
             const json = JSON.stringify(problemWithMeta);
@@ -135,6 +139,19 @@ export const StorageService = {
         try {
             const json = await AsyncStorage.getItem(KEYS.CACHE_TREE);
             return json ? JSON.parse(json) : [];
+        } catch (e) {
+            return [];
+        }
+    },
+
+    async getFilteredFileTree(): Promise<Problem[]> {
+        try {
+            const tree = await this.getCachedFileTree();
+            const selectedFolder = await this.getSelectedFolder();
+            if (selectedFolder && selectedFolder !== 'All') {
+                return tree.filter(p => p.path.startsWith(selectedFolder + '/'));
+            }
+            return tree;
         } catch (e) {
             return [];
         }

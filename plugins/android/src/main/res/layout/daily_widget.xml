@@ -1,10 +1,30 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#2B2B2B"
-    android:orientation="vertical"
     android:padding="12dp">
+
+    <!-- Repo Name (Absolute Top Right) -->
+    <TextView
+        android:id="@+id/widget_repo_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginEnd="4dp"
+        android:text="Repo"
+        android:textColor="#5C85C3"
+        android:textSize="10sp"
+        android:textStyle="italic"
+        android:alpha="0.8" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginTop="24dp">
 
     <!-- Header: Title and Difficulty with Navigation -->
     <LinearLayout
@@ -140,4 +160,5 @@
         android:textSize="10sp"
         android:gravity="center" />
 
-</LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

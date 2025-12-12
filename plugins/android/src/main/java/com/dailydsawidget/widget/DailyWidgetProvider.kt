@@ -188,6 +188,7 @@ class DailyWidgetProvider : AppWidgetProvider() {
             var technique = "Tech: -"
             var complexity = "Time: - | Space: -"
             var isSeen = false
+            var repoName = ""
             
             if (file.exists()) {
                 try {
@@ -196,6 +197,7 @@ class DailyWidgetProvider : AppWidgetProvider() {
                     problemName = json.optString("name", "Unknown")
                     difficulty = json.optString("difficulty", "")
                     topic = json.optString("topic", "")
+                    repoName = json.optString("repoName", "")
                     
                     val rawIntuition = json.optString("intuition", "")
                     intuition = if (rawIntuition.isNotEmpty()) "Intuition: $rawIntuition" else ""
@@ -226,6 +228,7 @@ class DailyWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.daily_widget)
             views.setTextViewText(R.id.widget_title, problemName)
             views.setTextViewText(R.id.widget_difficulty, "$difficulty • $topic")
+            views.setTextViewText(R.id.widget_repo_name, repoName)
 
             // Conditional Metadata Display
             if (intuition.replace("Intuition: ", "").trim().isEmpty() || intuition == "Intuition: -") {
