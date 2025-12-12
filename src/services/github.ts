@@ -39,9 +39,16 @@ export const GithubService = {
             }
 
             const treeData = await treeResponse.json();
-            const files = treeData.tree.filter((item: any) => item.path.endsWith('.java'));
 
-            // Fetch Metadata JSON
+            // Filter for files (blobs) and exclude common non-code assets
+            const excludedExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.zip', '.jar', '.class'];
+            const files = treeData.tree.filter((item: any) => {
+                if (item.type !== 'blob') return false;
+                const lowerPath = item.path.toLowerCase();
+                return !excludedExtensions.some(ext => lowerPath.endsWith(ext));
+            });
+
+            // Fetch Metadata JSON (Optional)
             let metadata = {};
             try {
                 const metaResponse = await fetch(
@@ -51,7 +58,7 @@ export const GithubService = {
                     metadata = await metaResponse.json();
                 }
             } catch (e) {
-                console.log('No metadata file found or error parsing it');
+                // Ignore if metadata missing
             }
 
             return files.map((file: any) => this.parseProblemMetadata(file, metadata, config));
@@ -65,21 +72,28 @@ export const GithubService = {
         const parts = file.path.split('/');
         const fileName = parts[parts.length - 1];
 
-        let difficulty = 'Unknown';
-        let topic = 'General';
+        let difficulty = 'File';
+        let topic = 'Root';
 
         if (parts.length > 1) {
+            // Use top-level folder as difficulty/category if available
             difficulty = parts[0];
         }
 
         if (parts.length > 2) {
+            // Use sub-folders as topic
             topic = parts.slice(1, parts.length - 1).join('/');
+        } else if (parts.length === 2) {
+            topic = parts[0];
         }
 
         const meta = metadata[file.path] || {};
 
+        // Remove extension for display name, but keep it if it's significant
+        const name = fileName.includes('.') ? fileName : fileName;
+
         return {
-            name: fileName.replace('.java', ''),
+            name: name,
             path: file.path,
             url: `${RAW_URL}/${config.username}/${config.repo}/main/${file.path}`,
             difficulty,

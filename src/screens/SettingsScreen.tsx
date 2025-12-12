@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StorageService } from '../services/storage';
+import { GithubService } from '../services/github';
 
 export default function SettingsScreen() {
     const [username, setUsername] = useState('');
@@ -36,7 +37,24 @@ export default function SettingsScreen() {
                 repo,
                 token: token || undefined
             });
-            Alert.alert('Success', 'Configuration saved!', [
+
+            // Clear existing cache and fetch new data
+            await StorageService.clearCache();
+
+            // We can't easily trigger HomeScreen refresh from here directly without context/redux,
+            // but resetting navigation to Home will trigger its useEffect/useFocusEffect.
+            // However, we should try to prime the cache here if possible to ensure widget gets updated.
+
+            // Prime the cache
+            const tree = await GithubService.fetchFileTree();
+            await StorageService.cacheFileTree(tree);
+
+            if (tree.length > 0) {
+                const randomProblem = tree[Math.floor(Math.random() * tree.length)];
+                await StorageService.setDailyProblem(randomProblem);
+            }
+
+            Alert.alert('Success', 'Configuration saved! Repository loaded.', [
                 { text: 'OK', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Home' }] }) }
             ]);
         } catch (error) {

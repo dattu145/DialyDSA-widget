@@ -138,5 +138,22 @@ export const StorageService = {
         } catch (e) {
             return [];
         }
+    },
+
+    async clearCache() {
+        try {
+            await AsyncStorage.multiRemove([
+                KEYS.HISTORY,
+                KEYS.DAILY_PROBLEM,
+                KEYS.LAST_FETCH_DATE,
+                KEYS.CACHE_TREE,
+                'dsa_selected_folder'
+            ]);
+            // Also clear file system cache
+            await FileSystem.deleteAsync(WIDGET_FILE_URI, { idempotent: true });
+            await FileSystem.deleteAsync(WIDGET_CACHE_URI, { idempotent: true });
+        } catch (e) {
+            console.error('Failed to clear cache', e);
+        }
     }
 };
