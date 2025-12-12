@@ -24,7 +24,7 @@ const withWidgetManifest = (config) => {
                 {
                     $: {
                         'android:name': '.widget.DailyWidgetProvider',
-                        'android:label': 'Daily DSA',
+                        'android:label': 'ViewWidget',
                         'android:exported': 'true',
                     },
                     'intent-filter': [

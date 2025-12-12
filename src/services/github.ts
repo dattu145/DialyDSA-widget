@@ -1,4 +1,4 @@
-import { CONFIG } from '../config';
+import { StorageService } from './storage';
 
 export interface Problem {
     name: string;
@@ -21,12 +21,15 @@ const RAW_URL = 'https://raw.githubusercontent.com';
 export const GithubService = {
     async fetchFileTree(): Promise<Problem[]> {
         try {
+            const config = await StorageService.getConfig();
+            if (!config) throw new Error('Configuration missing');
+
             // Fetch File Tree
             const treeResponse = await fetch(
-                `${BASE_URL}/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/git/trees/main?recursive=1`,
+                `${BASE_URL}/${config.username}/${config.repo}/git/trees/main?recursive=1`,
                 {
-                    headers: CONFIG.GITHUB_TOKEN
-                        ? { Authorization: `token ${CONFIG.GITHUB_TOKEN}` }
+                    headers: config.token
+                        ? { Authorization: `token ${config.token}` }
                         : {},
                 }
             );
@@ -42,7 +45,7 @@ export const GithubService = {
             let metadata = {};
             try {
                 const metaResponse = await fetch(
-                    `${RAW_URL}/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/main/problems_metadata.json`
+                    `${RAW_URL}/${config.username}/${config.repo}/main/problems_metadata.json`
                 );
                 if (metaResponse.ok) {
                     metadata = await metaResponse.json();
@@ -51,14 +54,14 @@ export const GithubService = {
                 console.log('No metadata file found or error parsing it');
             }
 
-            return files.map((file: any) => this.parseProblemMetadata(file, metadata));
+            return files.map((file: any) => this.parseProblemMetadata(file, metadata, config));
         } catch (error) {
             console.error('Error fetching file tree:', error);
             throw error;
         }
     },
 
-    parseProblemMetadata(file: any, metadata: any): Problem {
+    parseProblemMetadata(file: any, metadata: any, config: any): Problem {
         const parts = file.path.split('/');
         const fileName = parts[parts.length - 1];
 
@@ -78,7 +81,7 @@ export const GithubService = {
         return {
             name: fileName.replace('.java', ''),
             path: file.path,
-            url: `${RAW_URL}/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/main/${file.path}`,
+            url: `${RAW_URL}/${config.username}/${config.repo}/main/${file.path}`,
             difficulty,
             topic,
             sha: file.sha,
@@ -92,8 +95,11 @@ export const GithubService = {
 
     async fetchProblemContent(path: string): Promise<string> {
         try {
+            const config = await StorageService.getConfig();
+            if (!config) throw new Error('Configuration missing');
+
             const response = await fetch(
-                `${RAW_URL}/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/main/${path}`
+                `${RAW_URL}/${config.username}/${config.repo}/main/${path}`
             );
 
             if (!response.ok) {

@@ -114,6 +114,23 @@ export const StorageService = {
         }
     },
 
+    async saveConfig(config: { username: string; repo: string; token?: string }) {
+        try {
+            await AsyncStorage.setItem('dsa_config', JSON.stringify(config));
+        } catch (e) {
+            console.error('Failed to save config', e);
+        }
+    },
+
+    async getConfig(): Promise<{ username: string; repo: string; token?: string } | null> {
+        try {
+            const json = await AsyncStorage.getItem('dsa_config');
+            return json ? JSON.parse(json) : null;
+        } catch (e) {
+            return null;
+        }
+    },
+
     async getCachedFileTree(): Promise<Problem[]> {
         try {
             const json = await AsyncStorage.getItem(KEYS.CACHE_TREE);

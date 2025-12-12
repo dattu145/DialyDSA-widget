@@ -14,9 +14,14 @@ export default function HomeScreen() {
     React.useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
-                <TouchableOpacity onPress={() => navigation.navigate('Filter')} style={{ marginRight: 16 }}>
-                    <Text style={{ color: '#007AFF', fontSize: 16 }}>Filter</Text>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row' }}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Filter')} style={{ marginRight: 16 }}>
+                        <Text style={{ color: '#007AFF', fontSize: 16 }}>Filter</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+                        <Text style={{ color: '#007AFF', fontSize: 16 }}>Settings</Text>
+                    </TouchableOpacity>
+                </View>
             ),
         });
     }, [navigation]);
@@ -99,7 +104,7 @@ export default function HomeScreen() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.header}>Daily DSA Problem</Text>
+            <Text style={styles.header}>ViewWidget</Text>
 
             {loading && <ActivityIndicator size="large" color="#0000ff" />}
 
@@ -146,6 +151,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 20,
         textAlign: 'center',
+        color: '#333',
     },
     content: {
         flex: 1,
@@ -164,6 +170,7 @@ const styles = StyleSheet.create({
         fontSize: 22,
         fontWeight: 'bold',
         marginBottom: 10,
+        color: '#333',
     },
     badges: {
         flexDirection: 'row',
@@ -176,6 +183,7 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         marginRight: 10,
         fontSize: 14,
+        color: '#333',
     },
     codeHeader: {
         fontSize: 16,
