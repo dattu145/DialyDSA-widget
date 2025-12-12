@@ -196,11 +196,24 @@ class DailyWidgetProvider : AppWidgetProvider() {
                     problemName = json.optString("name", "Unknown")
                     difficulty = json.optString("difficulty", "")
                     topic = json.optString("topic", "")
-                    intuition = "Intuition: " + json.optString("intuition", "-")
-                    technique = "Tech: " + json.optString("technique", "-")
-                    val time = json.optString("timeComplexity", "-")
-                    val space = json.optString("spaceComplexity", "-")
-                    complexity = "Time: $time | Space: $space"
+                    
+                    val rawIntuition = json.optString("intuition", "")
+                    intuition = if (rawIntuition.isNotEmpty()) "Intuition: $rawIntuition" else ""
+                    
+                    val rawTechnique = json.optString("technique", "")
+                    technique = if (rawTechnique.isNotEmpty()) "Tech: $rawTechnique" else ""
+                    
+                    val time = json.optString("timeComplexity", "")
+                    val space = json.optString("spaceComplexity", "")
+                    
+                    if (time.isNotEmpty() || space.isNotEmpty()) {
+                        val t = if (time.isNotEmpty()) time else "-"
+                        val s = if (space.isNotEmpty()) space else "-"
+                        complexity = "Time: $t | Space: $s"
+                    } else {
+                        complexity = ""
+                    }
+                    
                     isSeen = json.optBoolean("seen", false)
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -213,9 +226,28 @@ class DailyWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.daily_widget)
             views.setTextViewText(R.id.widget_title, problemName)
             views.setTextViewText(R.id.widget_difficulty, "$difficulty • $topic")
-            views.setTextViewText(R.id.widget_intuition, intuition)
-            views.setTextViewText(R.id.widget_technique, technique)
-            views.setTextViewText(R.id.widget_complexity, complexity)
+
+            // Conditional Metadata Display
+            if (intuition.replace("Intuition: ", "").trim().isEmpty() || intuition == "Intuition: -") {
+                views.setViewVisibility(R.id.widget_intuition, android.view.View.GONE)
+            } else {
+                views.setTextViewText(R.id.widget_intuition, intuition)
+                views.setViewVisibility(R.id.widget_intuition, android.view.View.VISIBLE)
+            }
+
+            if (technique.replace("Tech: ", "").trim().isEmpty() || technique == "Tech: -") {
+                views.setViewVisibility(R.id.widget_technique, android.view.View.GONE)
+            } else {
+                views.setTextViewText(R.id.widget_technique, technique)
+                views.setViewVisibility(R.id.widget_technique, android.view.View.VISIBLE)
+            }
+
+            if (complexity.contains("Time: -") && complexity.contains("Space: -")) {
+                 views.setViewVisibility(R.id.widget_complexity, android.view.View.GONE)
+            } else {
+                 views.setTextViewText(R.id.widget_complexity, complexity)
+                 views.setViewVisibility(R.id.widget_complexity, android.view.View.VISIBLE)
+            }
             
             if (isSeen) {
                 views.setViewVisibility(R.id.widget_seen_badge, android.view.View.VISIBLE)
